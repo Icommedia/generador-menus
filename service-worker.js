@@ -1,5 +1,6 @@
-const CACHE = 'menus-grupo-pwa-v2';
+const CACHE = 'menus-grupo-pwa-v19-20261005';
 const CORE = [
+  './index.html',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -7,15 +8,19 @@ const CORE = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)));
-  self.skipWaiting();
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    await cache.addAll(CORE.map(path => new Request(new URL(path, self.registration.scope), { cache: 'reload' })));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k.startsWith('menus-grupo-pwa-') && k !== CACHE).map(k => caches.delete(k)));
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', event => {
@@ -27,8 +32,9 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => {
       try {
         const fresh = await fetch(req, { cache: 'no-store' });
+        if (!fresh.ok) return (await caches.match('./index.html')) || fresh;
         const cache = await caches.open(CACHE);
-        cache.put('./index.html', fresh.clone()).catch(() => {});
+        await cache.put('./index.html', fresh.clone()).catch(() => {});
         return fresh;
       } catch (e) {
         return (await caches.match('./index.html')) || (await caches.match('./')) || Response.error();
@@ -42,7 +48,7 @@ self.addEventListener('fetch', event => {
     if (cached) return cached;
     const fresh = await fetch(req);
     const cache = await caches.open(CACHE);
-    cache.put(req, fresh.clone()).catch(() => {});
+    if (fresh.ok || fresh.type === 'opaque') await cache.put(req, fresh.clone()).catch(() => {});
     return fresh;
   })());
 });
