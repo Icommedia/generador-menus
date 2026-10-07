@@ -1,4 +1,4 @@
-const CACHE = 'menus-grupo-pwa-v20-20261006';
+const CACHE = 'menus-grupo-pwa-v21-20261007';
 const CORE = [
   './index.html',
   './manifest.webmanifest',
