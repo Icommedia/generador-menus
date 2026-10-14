@@ -1,11 +1,11 @@
-/* Generador de Menús Grupo · Service Worker v22 · 14/10/2026
- * Publicar junto a index.html v22 y conservar manifest.webmanifest e icons/.
+/* Generador de Menús Grupo · Service Worker v23 · 14/10/2026
+ * Publicar junto a index.html v23 y conservar manifest.webmanifest e icons/.
  * Navegaciones: red primero, caché como respaldo si se pierde la conexión.
  */
 'use strict';
 
 // Cambiar este nombre en cada nueva versión publicada para renovar la caché.
-const CACHE = 'menus-grupo-pwa-v22-20261014';
+const CACHE = 'menus-grupo-pwa-v23-20261014';
 const APP_SHELL = [
   './index.html',
   './manifest.webmanifest'
