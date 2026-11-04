@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Generador de menús · Grupo · v23</title>
+<title>Generador de menús · Grupo · v26</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#f8f2e9">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,7 +22,11 @@
 <div class="layout"><aside class="panel">
   <div class="section"><h2>Restaurante</h2><div class="profileBox"><select id="restaurant"><option value="tankeria">La Tankería</option><option value="villanueva">Villanueva de Ávila</option><option value="tarada">La Tarada</option><option value="principado">El Principado</option></select><p class="hint" id="profileInfo"></p></div></div>
   <div class="section"><h2>1 · Pega el menú</h2><textarea id="quick" placeholder="Pega aquí el menú tal cual llegue por WhatsApp. Reconoce fecha, Primeros, Segundos y suplemento."></textarea><div class="actions"><button id="parseBtn">Leer y maquetar</button><button class="secondary" id="demoBtn">Cargar ejemplo</button></div><p class="hint" id="parseInfo"></p><p class="hint">Primera letra en mayúscula. Elimina emojis/emoticonos y recupera palabras habituales cuando el emoji las sustituye.</p></div>
-  <div class="section"><h2>2 · Fecha</h2><input type="date" id="fecha"><label>Texto que aparecerá</label><input id="fechaTexto"></div>
+  <div class="section"><h2>2 · Fecha</h2>
+<label>Seleccionar fecha</label><select id="fechaModo"><option value="auto" selected>Automática · hora de Madrid</option><option value="manual">Manual · elegir fecha</option></select>
+<p class="hint" id="fechaHint">Hasta las 19:59, hoy. Desde las 20:00, siguiente día laborable. Sábados y domingos, lunes.</p>
+<label>Fecha del menú</label><input type="date" id="fecha"><label>Texto que aparecerá</label><input id="fechaTexto">
+<p class="hint">Si editas la fecha, cambia al modo manual. Puedes volver a «Automática» cuando quieras.</p></div>
   <div class="section"><h2>3 · Primeros</h2><div id="primeros"></div></div>
   <div class="section"><h2>4 · Segundos</h2><div id="segundos"></div><div id="extraSettings"><label>Plato extra fijo</label><input id="extra" value="Cachopo asturiano (+7€ supl)" placeholder="Ej. Cachopo asturiano (+7€ supl)"><p class="hint">Se mantiene automáticamente al leer cada nuevo menú. Si algún día no se ofrece, puedes borrarlo.</p></div><p class="hint" id="principadoExtraNotice" hidden>El Principado: suplemento fijo desactivado definitivamente.</p></div>
   <div class="section"><h2>5 · Tipografía</h2><label>Platos</label><select id="fontDish"><option value="lora" selected>Lora 500 · elegante y legible</option><option value="baskerville">Libre Baskerville · clásica</option><option value="source">Source Serif 4 · limpia</option><option value="cormorant">Cormorant Garamond · estilizada</option></select><p class="hint">Cada restaurante conserva su plantilla y sus coordenadas. El motor común solo resuelve fecha, platos, saltos de línea y exportación.</p></div>
@@ -77,12 +81,81 @@ function makeInputs(el,prefix){for(let i=0;i<7;i++){const d=document.createEleme
 function cap(s){s=(s||'').trim().replace(/\s+/g,' ');if(!s)return '';try{return s.replace(/\p{L}/u,ch=>ch.toLocaleUpperCase('es-ES'))}catch(e){const m=s.match(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/);if(!m)return s;const i=m.index;return s.slice(0,i)+s[i].toLocaleUpperCase('es-ES')+s.slice(i+1)}}function norm(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
 const EMOJI_WORDS=[['🍞','pan',['pan']],['🥖','pan',['pan']],['🥤','bebida',['bebida']],['🍺','bebida',['bebida','cerveza']],['🍻','bebida',['bebida','cerveza']],['🍷','bebida',['bebida','vino']],['☕','café',['cafe','café']],['🍰','postre',['postre','tarta']],['🍮','postre',['postre','flan']],['🍨','postre',['postre','helado']],['🍦','postre',['postre','helado']],['🥗','ensalada',['ensalada']],['🍚','arroz',['arroz']],['🍝','pasta',['pasta','espaguetis','macarrones']],['🍗','pollo',['pollo']],['🥩','carne',['carne','ternera','cerdo']],['🐟','pescado',['pescado']],['🍤','gambas',['gamba','gambas']],['🥚','huevo',['huevo','huevos']],['🥔','patata',['patata','patatas']],['🍅','tomate',['tomate']],['🧀','queso',['queso']]];
 function stripOrReplaceEmoji(s){s=(s||'').normalize('NFKC');const plain=norm(s);for(const [emoji,word,aliases] of EMOJI_WORDS){if(!s.includes(emoji))continue;const exists=aliases.some(a=>plain.includes(norm(a)));s=s.split(emoji).join(exists?' ':` ${word} `)}try{s=s.replace(/\p{Extended_Pictographic}|\p{Emoji_Presentation}|[\u{1F3FB}-\u{1F3FF}]/gu,' ')}catch(e){s=s.replace(/[\u2600-\u27BF]|[\uD83C-\uDBFF][\uDC00-\uDFFF]/g,' ')}s=s.replace(/(?:^|\s)(?:[:;=8xX][\-^']?[)(DPpOo/\\|]|<3)(?=\s|$)/g,' ');return s}
-function cleanDish(s){s=stripOrReplaceEmoji(s).replace(/[\u200B-\u200F\uFEFF]/g,' ').replace(/[•▪◦‣·]/g,' ').replace(/^\s*(?:[-–—*]+\s*)?(?:\d{1,2}\s*[.)-]?\s*)?/,'').trim().replace(/\s+/g,' ');for(const [r,to] of FIXES)s=s.replace(r,to);return cap(s)}
-function parseDateLine(line){const n=norm(line),months=MESES.map(norm),m=n.match(new RegExp('(\\d{1,2})\\s*(?:de\\s+)?('+months.join('|')+')(?:\\s*(?:de|del)?\\s*(\\d{4}))?'));if(!m)return null;return new Date(m[3]?+m[3]:new Date().getFullYear(),months.indexOf(m[2]),+m[1])}
-function parseMenu(text){const o={p:[],s:[],extra:'',date:null};let sec=null;const loose=[];for(const raw of text.split(/\r?\n/)){const line=raw.trim();if(!line||forbiddenSupplement(line))continue;const n=norm(stripOrReplaceEmoji(line)).replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();if(/^(primeros?|primer plato|entrantes?)$/.test(n)){sec='p';continue}if(/^(segundos?|segundo plato|principales?)$/.test(n)){sec='s';continue}if(!o.date){const d=parseDateLine(line);if(d&&n.length<70){o.date=d;continue}}if(/supl|suplement/.test(n)){if(allowsExtra())o.extra=cleanDish(line);continue}const dish=cleanDish(line);if(!dish)continue;if(sec)o[sec].push(dish);else loose.push(dish)}if(loose.length&&!o.p.length&&!o.s.length){const h=Math.ceil(loose.length/2);o.p=loose.slice(0,h);o.s=loose.slice(h)}else if(loose.length)o.p=[...loose,...o.p];return o}
-function datePretty(d){return `${DIAS[d.getDay()].toUpperCase()}, ${d.getDate()} DE ${MESES[d.getMonth()].toUpperCase()}`}function setDate(d){$('#fecha').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;$('#fechaTexto').value=datePretty(d)}
-function fillSample(){for(let i=0;i<7;i++){$('#p'+i).value=SAMPLE.p[i]||'';$('#s'+i).value=SAMPLE.s[i]||''}$('#quick').value='';$('#parseInfo').textContent='';$('#extra').value=allowsExtra()?SAMPLE.extra:'';const [y,m,d]=SAMPLE.date.split('-').map(Number);setDate(new Date(y,m-1,d));saveState();schedule()}
-function applyParse(){const r=parseMenu($('#quick').value);for(let i=0;i<7;i++){$('#p'+i).value=r.p[i]||'';$('#s'+i).value=r.s[i]||''}$('#extra').value=allowsExtra()?(r.extra||$('#extra').value.trim()):'';if(r.date)setDate(r.date);$('#parseInfo').textContent=`${r.p.length} primeros · ${r.s.length} segundos${allowsExtra()?(r.extra?' · suplemento detectado':($('#extra').value.trim()?' · suplemento conservado':'')):''}`;saveState();schedule()}
+// Solo eliminamos viñetas y números de lista: nunca cantidades como 1/2, 1/4 o 2 huevos.
+function cleanDish(s){
+ s=stripOrReplaceEmoji(s).replace(/[\u200B-\u200F\u2060\uFEFF]/g,' ')
+   .replace(/\u2044/g,'/')
+   .replace(/^\s*[-–—⁃*•▪◦‣·]+\s*/u,'')
+   .replace(/^\s*\d{1,2}\s*(?:\)\s*|\.\s+|[-–—]\s+)/u,'')
+   .trim().replace(/\s+/g,' ');
+ for(const [r,to] of FIXES)s=s.replace(r,to);
+ return /^\d+(?:\/\d+|\.\d+)?\s/.test(s)?s:cap(s)
+}
+// La fecha del WhatsApp solo sirve para avisar: NO determina el día del menú.
+function parseDateLine(line){
+ const n=norm(line);
+ const named=n.match(/\b(\d{1,2})\s*(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s*(?:(?:de|del)\s*)?(\d{4}))?\b/);
+ const numeric=!named&&n.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})\b/);
+ if(!named&&!numeric)return null;
+ const now=nowMadridParts();
+ const year=Number(named?(named[3]||now.year):numeric[3]);
+ const month=named?MESES.map(norm).indexOf(named[2])+1:Number(numeric[2]);
+ const day=Number(named?named[1]:numeric[1]);
+ const d=new Date(year,month-1,day);
+ return year>=2000&&year<=2100&&d.getFullYear()===year&&d.getMonth()===month-1&&d.getDate()===day?d:null
+}
+function parseMenu(text){
+ const o={p:[],s:[],extra:'',date:null};let sec=null;const loose=[];
+ for(const raw of text.split(/\r?\n/)){
+  const line=raw.trim();if(!line||forbiddenSupplement(line))continue;
+  const n=norm(stripOrReplaceEmoji(line)).replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+  if(/^(la tankeria|cerveceria la tankeria|la tarada|villanueva de avila|el principado)$/.test(n))continue;
+  if(/^(primeros?|primer plato|entrantes?)$/.test(n)){sec='p';continue}
+  if(/^(segundos?|segundo plato|principales?)$/.test(n)){sec='s';continue}
+  const d=parseDateLine(line);
+  if(d&&(n.length<100||/\bmenu\b|\bfecha\b/.test(n))){if(!o.date)o.date=d;continue}
+  if(/^menu(?:\s+del?\b|\s*$)/.test(n))continue;
+  if(/supl|suplement/.test(n)){if(allowsExtra())o.extra=cleanDish(line);continue}
+  const dish=cleanDish(line);if(!dish)continue;
+  if(sec)o[sec].push(dish);else loose.push(dish)
+ }
+ if(loose.length&&!o.p.length&&!o.s.length){const h=Math.ceil(loose.length/2);o.p=loose.slice(0,h);o.s=loose.slice(h)}
+ else if(loose.length)o.p=[...loose,...o.p];
+ return o
+}
+function datePretty(d){return `${DIAS[d.getDay()].toUpperCase()}, ${d.getDate()} DE ${MESES[d.getMonth()].toUpperCase()}`}
+function setDate(d){$('#fecha').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;$('#fechaTexto').value=datePretty(d)}
+function nowMadridParts(now=new Date()){
+ const fields=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(now);
+ const parts={};for(const field of fields)if(field.type!=='literal')parts[field.type]=Number(field.value);
+ return {year:parts.year,month:parts.month,day:parts.day,hour:parts.hour,minute:parts.minute}
+}
+function nextMenuDateInMadrid(now=new Date()){
+ const p=nowMadridParts(now),d=new Date(p.year,p.month-1,p.day);
+ if(p.hour>=20)d.setDate(d.getDate()+1);
+ while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);
+ return d
+}
+function syncDateMode(now=new Date()){
+ if($('#fechaModo').value==='auto')setDate(nextMenuDateInMadrid(now));
+ $('#fechaHint').textContent=$('#fechaModo').value==='auto'
+ ?'Automática (hora de Madrid): hasta las 19:59, hoy; desde las 20:00, siguiente día laborable. Fines de semana: lunes.'
+ :'Manual: la fecha elegida no se cambia al pegar un WhatsApp. Selecciona «Automática» para volver al cálculo.';
+}
+function sameCalendarDate(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
+function fillSample(){for(let i=0;i<7;i++){$('#p'+i).value=SAMPLE.p[i]||'';$('#s'+i).value=SAMPLE.s[i]||''}$('#quick').value='';$('#parseInfo').textContent='';$('#extra').value=allowsExtra()?SAMPLE.extra:'';syncDateMode();saveState();schedule()}
+function applyParse(){
+ const r=parseMenu($('#quick').value);
+ for(let i=0;i<7;i++){$('#p'+i).value=r.p[i]||'';$('#s'+i).value=r.s[i]||''}
+ $('#extra').value=allowsExtra()?(r.extra||$('#extra').value.trim()):'';
+ syncDateMode();
+ let info=`${r.p.length} primeros · ${r.s.length} segundos${allowsExtra()?(r.extra?' · suplemento detectado':($('#extra').value.trim()?' · suplemento conservado':'')):''}`;
+ if(r.date){
+  const [y,m,d]=$('#fecha').value.split('-').map(Number),chosen=new Date(y,m-1,d);
+  if(!sameCalendarDate(r.date,chosen)) info+=` · AVISO: el WhatsApp indica ${r.date.getDate()} de ${MESES[r.date.getMonth()]} de ${r.date.getFullYear()}. Se mantiene ${datePretty(chosen).toLowerCase()} de ${y}.`;
+ }
+ $('#parseInfo').textContent=info;saveState();schedule()
+}
 function current(){const p=[...Array(7)].map((_,i)=>cleanDish($('#p'+i).value)).filter(v=>v&&!forbiddenSupplement(v));let s=[...Array(7)].map((_,i)=>cleanDish($('#s'+i).value)).filter(v=>v&&!forbiddenSupplement(v));if(allowsExtra()&&$('#extra').value.trim())s.push(cleanDish($('#extra').value));return {p,s}}
 function fontDish(size){const v=$('#fontDish').value;if(v==='baskerville')return `400 ${size}px "Libre Baskerville", Georgia, serif`;if(v==='source')return `500 ${size}px "Source Serif 4", Georgia, serif`;if(v==='cormorant')return `600 ${size}px "Cormorant Garamond", Georgia, serif`;return `500 ${size}px "Lora", Georgia, serif`}
 function trackedWidth(ctx,text,spacing){let w=0;for(let i=0;i<text.length;i++){w+=ctx.measureText(text[i]).width;if(i<text.length-1)w+=spacing}return w}function trackedText(ctx,text,x,y,spacing){const widths=[...text].map(ch=>ctx.measureText(ch).width),total=widths.reduce((a,b)=>a+b,0)+spacing*Math.max(0,text.length-1);let xx=x-total/2;for(let i=0;i<text.length;i++){ctx.fillText(text[i],xx+widths[i]/2,y);xx+=widths[i]+spacing}}
@@ -138,7 +211,7 @@ function render(key,c=canvases[key]){const f=fmat(key),ctx=c.getContext('2d'),tp
 function renderAll(){if(!ready)return;const a=render('a3'),s=render('story');$('#status').textContent=`${profile().label} · A3 ${a.size}px · 9:16 ${s.size}px`;paint()}function paint(){const f=fmat(view),stage=$('#stage');stage.width=canvases[view].width;stage.height=canvases[view].height;stage.getContext('2d').drawImage(canvases[view],0,0);stage.style.aspectRatio=`${f.w}/${f.h}`}function schedule(){if(!ready)return;cancelAnimationFrame(raf);raf=requestAnimationFrame(renderAll)}
 function stateKey(){return 'menus-grupo-v14-'+active}
 function saveState(){
- const state={fecha:$('#fecha').value,fechaTexto:$('#fechaTexto').value,fontDish:$('#fontDish').value,
+ const state={fecha:$('#fecha').value,fechaTexto:$('#fechaTexto').value,fechaModo:$('#fechaModo').value,fontDish:$('#fontDish').value,
  p:[...Array(7)].map((_,i)=>$('#p'+i).value),s:[...Array(7)].map((_,i)=>$('#s'+i).value),
  extra:allowsExtra()?$('#extra').value:'',quick:$('#quick').value};
  stateCache[active]=state;
@@ -153,7 +226,7 @@ function loadState(){
  }
  if(!o)return false;
  try{
-  $('#fecha').value=o.fecha||'';$('#fechaTexto').value=o.fechaTexto||'';
+  $('#fechaModo').value=o.fechaModo==='manual'?'manual':'auto';$('#fecha').value=o.fecha||'';$('#fechaTexto').value=o.fechaTexto||'';syncDateMode();
   $('#fontDish').value=o.fontDish||'lora';$('#quick').value=o.quick||'';
   for(let i=0;i<7;i++){
    $('#p'+i).value=forbiddenSupplement(o.p?.[i])?'':cleanDish(o.p?.[i]||'');
@@ -163,8 +236,8 @@ function loadState(){
   return true;
  }catch(e){return false}
 }
-function updateProfileUI(){const p=profile();$('#restaurant').value=active;$('#brand').firstChild.nodeValue=p.label;$('#brandSub').textContent='Generador v23 · 4 restaurantes · A3 + 9:16';$('#profileInfo').innerHTML=p.note+' <span class="pill">perfil independiente</span>';$('#extraSettings').hidden=!allowsExtra();$('#principadoExtraNotice').hidden=allowsExtra();if(!allowsExtra())$('#extra').value=''}
-$('#restaurant').addEventListener('change',async e=>{saveState();active=e.target.value;updateProfileUI();$('#parseInfo').textContent='';if(!loadState())fillSample();saveState();setExportBusy(true);try{await loadActiveTemplates()}finally{setExportBusy(false)}});$('#parseBtn').onclick=applyParse;$('#demoBtn').onclick=fillSample;$('#quick').addEventListener('input',saveState);$('#quick').addEventListener('paste',()=>setTimeout(applyParse,60));$('#fecha').addEventListener('change',e=>{if(!e.target.value)return;const [y,m,d]=e.target.value.split('-').map(Number);$('#fechaTexto').value=datePretty(new Date(y,m-1,d));saveState();schedule()});document.querySelectorAll('input,select').forEach(el=>{if(el.id!=='restaurant')el.addEventListener('input',()=>{saveState();schedule()})});[...Array(7)].forEach((_,i)=>{for(const id of ['#p'+i,'#s'+i]){const el=$(id);el.addEventListener('blur',e=>{e.target.value=cleanDish(e.target.value);saveState();schedule()});el.addEventListener('change',e=>{e.target.value=cleanDish(e.target.value);saveState();schedule()});el.addEventListener('paste',()=>setTimeout(()=>{el.value=cleanDish(el.value);saveState();schedule()},0))}});$('#extra').addEventListener('blur',e=>{e.target.value=cleanDish(e.target.value);saveState();schedule()});$('#extra').addEventListener('change',e=>{e.target.value=cleanDish(e.target.value);saveState();schedule()});$('#extra').addEventListener('paste',()=>setTimeout(()=>{$('#extra').value=cleanDish($('#extra').value);saveState();schedule()},0));document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');view=b.dataset.view;paint()});
+function updateProfileUI(){const p=profile();$('#restaurant').value=active;$('#brand').firstChild.nodeValue=p.label;$('#brandSub').textContent='Generador v26 · 4 restaurantes · A3 + 9:16';$('#profileInfo').innerHTML=p.note+' <span class="pill">perfil independiente</span>';$('#extraSettings').hidden=!allowsExtra();$('#principadoExtraNotice').hidden=allowsExtra();if(!allowsExtra())$('#extra').value=''}
+$('#restaurant').addEventListener('change',async e=>{saveState();active=e.target.value;updateProfileUI();$('#parseInfo').textContent='';if(!loadState())fillSample();saveState();setExportBusy(true);try{await loadActiveTemplates()}finally{setExportBusy(false)}});$('#parseBtn').onclick=applyParse;$('#demoBtn').onclick=fillSample;$('#quick').addEventListener('input',saveState);$('#quick').addEventListener('paste',()=>setTimeout(applyParse,60));$('#fechaModo').addEventListener('change',()=>{syncDateMode();saveState();schedule()});$('#fecha').addEventListener('change',e=>{if(!e.target.value)return;$('#fechaModo').value='manual';const [y,m,d]=e.target.value.split('-').map(Number);$('#fechaTexto').value=datePretty(new Date(y,m-1,d));syncDateMode();saveState();schedule()});$('#fechaTexto').addEventListener('change',()=>{$('#fechaModo').value='manual';syncDateMode();saveState();schedule()});document.querySelectorAll('input,select').forEach(el=>{if(el.id!=='restaurant')el.addEventListener('input',()=>{saveState();schedule()})});[...Array(7)].forEach((_,i)=>{for(const id of ['#p'+i,'#s'+i]){const el=$(id);el.addEventListener('blur',e=>{e.target.value=cleanDish(e.target.value);saveState();schedule()});el.addEventListener('change',e=>{e.target.value=cleanDish(e.target.value);saveState();schedule()});el.addEventListener('paste',()=>setTimeout(()=>{el.value=cleanDish(el.value);saveState();schedule()},0))}});$('#extra').addEventListener('blur',e=>{e.target.value=cleanDish(e.target.value);saveState();schedule()});$('#extra').addEventListener('change',e=>{e.target.value=cleanDish(e.target.value);saveState();schedule()});$('#extra').addEventListener('paste',()=>setTimeout(()=>{$('#extra').value=cleanDish($('#extra').value);saveState();schedule()},0));document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');view=b.dataset.view;paint()});
 function crc32(bytes){let c=0xffffffff;for(const b of bytes){c^=b;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0)}return(c^0xffffffff)>>>0}async function pngWithDpi(canvas,dpi){
  const blob=await canvasBlob(canvas),ppm=Math.round(dpi/0.0254);
  const data=new Uint8Array(9),dv=new DataView(data.buffer);
@@ -197,7 +270,7 @@ async function exportImage(key){
 }
 async function downloadFormats(keys){
  if(exporting)return;setExportBusy(true);
-  try{await initialization;saveState();cancelAnimationFrame(raf);
+  try{await initialization;syncDateMode();saveState();cancelAnimationFrame(raf);
    // Export one format at a time; two full-size canvases at once can reload
    // the page in memory-constrained browsers and appear to erase the form.
    for(const key of keys){
@@ -219,18 +292,18 @@ $('#printA3').onclick=async()=>{
  if(!w){$('#status').textContent='Permite ventanas emergentes para imprimir el A3.';return}
  w.document.write('<!doctype html><html lang="es"><title>Imprimir menú A3</title><body>Preparando el menú…</body></html>');
  setExportBusy(true);
- try{await initialization;saveState();const b=await exportImage('a3'),u=URL.createObjectURL(b);
+ try{await initialization;syncDateMode();saveState();const b=await exportImage('a3'),u=URL.createObjectURL(b);
   if(w.closed){URL.revokeObjectURL(u);return}
   w.document.head.insertAdjacentHTML('beforeend','<style>@page{size:A3 portrait;margin:0}html,body{margin:0}img{width:297mm;height:420mm;display:block}</style>');
   const img=w.document.createElement('img');img.alt='Menú A3';img.onload=()=>{URL.revokeObjectURL(u);w.focus();w.print()};img.src=u;w.document.body.replaceChildren(img);
  }catch(e){if(!w.closed)w.document.body.textContent='No se pudo preparar la impresión.';$('#status').textContent=e.message}
  finally{setExportBusy(false);paint()}
 };
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveState();else schedule()});window.addEventListener('pagehide',saveState);
-window.addEventListener('pageshow',schedule);window.addEventListener('focus',schedule);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveState();else{syncDateMode();saveState();schedule()}});window.addEventListener('pagehide',saveState);
+window.addEventListener('pageshow',()=>{syncDateMode();schedule()});window.addEventListener('focus',()=>{syncDateMode();saveState();schedule()});
 $('#stage').addEventListener('contextrestored',schedule);
 
-async function init(){for(const name of ['localStorage','sessionStorage'])try{const last=window[name].getItem('menus-grupo-active-v22');if(Object.prototype.hasOwnProperty.call(PROFILES,last)){active=last;break}}catch(e){}updateProfileUI();if(!loadState())fillSample();if(!$('#fecha').value)setDate(new Date());saveState();try{await Promise.all([document.fonts.load('500 28px Lora'),document.fonts.load('600 29px "Cormorant Garamond"'),document.fonts.load('400 26px "Libre Baskerville"'),document.fonts.load('500 26px "Source Serif 4"')])}catch(e){}await loadActiveTemplates()}setExportBusy(true);const initialization=init();initialization.then(()=>setExportBusy(false)).catch(e=>{$('#status').textContent='No se pudieron cargar las plantillas: '+e.message});
+async function init(){for(const name of ['localStorage','sessionStorage'])try{const last=window[name].getItem('menus-grupo-active-v22');if(Object.prototype.hasOwnProperty.call(PROFILES,last)){active=last;break}}catch(e){}updateProfileUI();if(!loadState())fillSample();syncDateMode();saveState();try{await Promise.all([document.fonts.load('500 28px Lora'),document.fonts.load('600 29px "Cormorant Garamond"'),document.fonts.load('400 26px "Libre Baskerville"'),document.fonts.load('500 26px "Source Serif 4"')])}catch(e){}await loadActiveTemplates()}setExportBusy(true);const initialization=init();initialization.then(()=>setExportBusy(false)).catch(e=>{$('#status').textContent='No se pudieron cargar las plantillas: '+e.message});
 </script><script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

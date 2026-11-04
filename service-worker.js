@@ -1,11 +1,11 @@
-/* Generador de Menús Grupo · Service Worker v23 - Villanueva 14,50 · 14/10/2026
- * Publicar junto a index.html v23 y conservar manifest.webmanifest e icons/.
+/* Generador de Menús Grupo · Service Worker v26 · Fecha automática y fracciones · 04/11/2026
+ * Publicar junto a index.html v26 y conservar manifest.webmanifest e icons/.
  * Navegaciones: red primero, caché como respaldo si se pierde la conexión.
  */
 'use strict';
 
 // Cambiar este nombre en cada nueva versión publicada para renovar la caché.
-const CACHE = 'menus-grupo-pwa-v25-tankeria-villanueva-1450-20261102';
+const CACHE = 'menus-grupo-pwa-v26-fecha-fracciones-20261104';
 const APP_SHELL = [
   './index.html',
   './manifest.webmanifest'
