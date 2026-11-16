@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Generador de menús · Grupo · v29</title>
+<title>Generador de menús · Grupo · v30</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#f8f2e9">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,7 +29,7 @@
 <header class="appbar"><div class="brand" id="brand">Generador de menús<small id="brandSub">Multi-restaurante · A3 + 9:16</small></div><div class="status" id="status">Listo</div></header>
 <div class="layout"><aside class="panel">
   <div class="section"><h2>Restaurante</h2><div class="profileBox"><select id="restaurant"><option value="tankeria">La Tankería</option><option value="villanueva">Villanueva de Ávila</option><option value="tarada">La Tarada</option><option value="principado">El Principado</option></select><p class="hint" id="profileInfo"></p></div></div>
-  <div class="section"><h2>1 · Pega el menú</h2><textarea id="quick" placeholder="Pega aquí el menú tal cual llegue por WhatsApp. Reconoce fecha, Primeros, Segundos y suplemento."></textarea><div class="actions"><button id="parseBtn">Leer y maquetar</button><button class="secondary" id="demoBtn">Cargar ejemplo</button></div><p class="hint" id="parseInfo"></p><div id="correctionReview" class="correctionReview" hidden></div><p class="hint">Corrector gastronómico V29 sin conexión: arregla erratas claras y muestra sugerencias dudosas para que decidas. Puedes deshacer cualquier cambio del corrector.</p></div>
+  <div class="section"><h2>1 · Pega el menú</h2><textarea id="quick" placeholder="Pega aquí el menú tal cual llegue por WhatsApp. Reconoce fecha, Primeros, Segundos y suplemento."></textarea><div class="actions"><button id="parseBtn">Leer y maquetar</button><button class="secondary" id="demoBtn">Cargar ejemplo</button></div><p class="hint" id="parseInfo"></p><div id="correctionReview" class="correctionReview" hidden></div><p class="hint">Corrector gastronómico V30 sin conexión: arregla erratas claras y muestra sugerencias dudosas para que decidas. Puedes deshacer cualquier cambio del corrector.</p></div>
   <div class="section"><h2>2 · Fecha</h2>
 <label>Seleccionar fecha</label><select id="fechaModo"><option value="auto" selected>Automática · hora de Madrid</option><option value="manual">Manual · elegir fecha</option></select>
 <p class="hint" id="fechaHint">Hasta las 19:59, hoy. Desde las 20:00, siguiente día laborable. Sábados y domingos, lunes.</p>
@@ -37,7 +37,7 @@
 <p class="hint">Si editas la fecha, cambia al modo manual. Puedes volver a «Automática» cuando quieras.</p></div>
   <div class="section"><h2>3 · Primeros</h2><div id="primeros"></div></div>
   <div class="section"><h2>4 · Segundos</h2><div id="segundos"></div><div id="extraSettings"><label>Plato extra fijo</label><input id="extra" value="Cachopo asturiano (+7€ supl)" placeholder="Ej. Cachopo asturiano (+7€ supl)"><p class="hint">Se mantiene automáticamente al leer cada nuevo menú. Si algún día no se ofrece, puedes borrarlo.</p></div><p class="hint" id="principadoExtraNotice" hidden>El Principado: suplemento fijo desactivado definitivamente.</p></div>
-  <div class="section"><h2>5 · Tipografía</h2><label>Platos</label><select id="fontDish"><option value="lora" selected>Lora 500 · elegante y legible</option><option value="baskerville">Libre Baskerville · clásica</option><option value="source">Source Serif 4 · limpia</option><option value="cormorant">Cormorant Garamond · estilizada</option></select><p class="hint">Cada restaurante conserva su diseño. En A3 aparece el detalle de bebidas incluidas, en lugar de la dirección; en historias 9:16 se mantiene la dirección original. Los títulos de PRIMEROS y SEGUNDOS van limpios, sin líneas laterales. Corrector gastronómico V29 revisable.</p></div>
+  <div class="section"><h2>5 · Tipografía</h2><label>Platos</label><select id="fontDish"><option value="lora" selected>Lora 500 · elegante y legible</option><option value="baskerville">Libre Baskerville · clásica</option><option value="source">Source Serif 4 · limpia</option><option value="cormorant">Cormorant Garamond · estilizada</option></select><p class="hint">Cada restaurante conserva su diseño. En A3 aparece el detalle de bebidas incluidas, en lugar de la dirección; en historias 9:16 se mantiene la dirección original. Los títulos de PRIMEROS y SEGUNDOS van limpios, sin líneas laterales. Corrector gastronómico V30 revisable.</p></div>
   <div class="section"><h2>6 · Exportar</h2><div class="actions"><button id="dlA3">Descargar A3 · 300 ppp</button><button id="dlStory">Descargar 9:16</button><button class="secondary" id="dlBoth">Descargar los dos</button><button class="secondary" id="printA3">Imprimir A3</button></div><p class="hint">A3 real: 3508 × 4961 px. Historia: 1080 × 1920 px. Descarga A3 y después 9:16 sin volver a maquetar: se mantienen la fecha, los platos y los ajustes.</p></div>
 </aside><main class="preview"><div class="tabs"><button class="tab active" data-view="a3">A3</button><button class="tab" data-view="story">9:16</button></div><canvas id="stage"></canvas><div class="downloads"><button id="quickA3">↓ A3</button><button id="quickStory">↓ 9:16</button></div></main></div>
 <script>
@@ -67,10 +67,19 @@ const FIXES=[
  [/\ben\s+salsa\s+bilbaina\b/gi,'en salsa bilbaína'],
  [/\ba\s+la\s+bilbaina\b/gi,'a la bilbaína']
 ];
+// V30: reglas sobre frases completas; no se corrigen nombres por mera semejanza.
 function corregirPlatoPorContexto(texto){
  let s=texto;
- // «Rumana» sí existe como gentilicio: corregir únicamente si es un plato de calamar.
- if(/\bcalamares?\b|\banillas?\s+de\s+calamar\b|\brabas\b/i.test(s)){
+ // Enfilada existe fuera de cocina; no se sustituye en cualquier contexto.
+ s=s.replace(/\benfilada(?=\s+de\s+membrillo\b)/giu,m=>keepCase(m,'ensalada'));
+ // La ausencia de «de» identifica la construcción defectuosa acordada.
+ // «Burritos de pollo» y cantidades expresas mantienen su plural.
+ s=s.replace(/^(burritos?)\s+(pollo|ternera|cerdo|verduras)(?=\s|$)/iu,
+   (_,dish,filling)=>keepCase(dish,'burrito')+' de '+filling);
+ s=s.replace(/\b(trasero|pechuga|muslo|contramuslo)\s+(pollo|pavo)\b/giu,'$1 de $2');
+ s=s.replace(/\bsalsa\s+(yogur|roquefort|mostaza)(?=\s|$)/giu,'salsa de $1');
+ s=s.replace(/\bsalsa de mostaza\s+miel\b/giu,'salsa de mostaza y miel');
+ if(/\bcalamares?\b|\banillas?\s+de\s+calamar\b|\brabas\b|\bchopitos\b/i.test(s)){
    s=s.replace(/\ba\s+la\s+(?:rumana|rumanna|rromana)\b/gi,'a la romana');
  }
  return s;
@@ -116,10 +125,16 @@ function cap(s){s=(s||'').trim().replace(/\s+/g,' ');if(!s)return '';try{return 
 const EMOJI_WORDS=[['🍞','pan',['pan']],['🥖','pan',['pan']],['🥤','bebida',['bebida']],['🍺','bebida',['bebida','cerveza']],['🍻','bebida',['bebida','cerveza']],['🍷','bebida',['bebida','vino']],['☕','café',['cafe','café']],['🍰','postre',['postre','tarta']],['🍮','postre',['postre','flan']],['🍨','postre',['postre','helado']],['🍦','postre',['postre','helado']],['🥗','ensalada',['ensalada']],['🍚','arroz',['arroz']],['🍝','pasta',['pasta','espaguetis','macarrones']],['🍗','pollo',['pollo']],['🥩','carne',['carne','ternera','cerdo']],['🐟','pescado',['pescado']],['🍤','gambas',['gamba','gambas']],['🥚','huevo',['huevo','huevos']],['🥔','patata',['patata','patatas']],['🍅','tomate',['tomate']],['🧀','queso',['queso']]];
 function stripOrReplaceEmoji(s){s=(s||'').normalize('NFKC');const plain=norm(s);for(const [emoji,word,aliases] of EMOJI_WORDS){if(!s.includes(emoji))continue;const exists=aliases.some(a=>plain.includes(norm(a)));s=s.split(emoji).join(exists?' ':` ${word} `)}try{s=s.replace(/\p{Extended_Pictographic}|\p{Emoji_Presentation}|[\u{1F3FB}-\u{1F3FF}]/gu,' ')}catch(e){s=s.replace(/[\u2600-\u27BF]|[\uD83C-\uDBFF][\uDC00-\uDFFF]/g,' ')}s=s.replace(/(?:^|\s)(?:[:;=8xX][\-^']?[)(DPpOo/\\|]|<3)(?=\s|$)/g,' ');return s}
 const GASTRO_TYPOS=new Map([["orno","horno"],["hornno","horno"],["rromana","romana"],["romanna","romana"],["andalus","andaluz"],["andalús","andaluz"],["andalusa","andaluza"],["andaluça","andaluza"],["planxa","plancha"],["plamcha","plancha"],["placha","plancha"],["marinerae","marinera"],["marinnera","marinera"],["parilla","parrilla"],["parrilia","parrilla"],["carbonarra","carbonara"],["bolonesa","boloñesa"],["boloonesa","boloñesa"],["boloñessa","boloñesa"],["bechamell","bechamel"],["besamel","bechamel"],["bechamél","bechamel"],["villarroy","villaroy"],["aliolli","alioli"],["ali-oli","alioli"],["alio-li","alioli"],["ali-olli","alioli"],["allioli","alioli"],["ajioli","alioli"],["ajilllo","ajillo"],["ajiyo","ajillo"],["pamentier","parmentier"],["pamantier","parmentier"],["parmantier","parmentier"],["parmenter","parmentier"],["rissoto","risotto"],["rissotto","risotto"],["risoto","risotto"],["roquefor","roquefort"],["roqueford","roquefort"],["roqueforrr","roquefort"],["culant","coulant"],["coulantt","coulant"],["crujente","crujiente"],["crugiente","crujiente"],["glaseao","glaseado"],["glaseaddo","glaseado"],["teriyaky","teriyaki"],["teriyakki","teriyaki"],["kimchy","kimchi"],["kinchi","kimchi"],["temprua","tempura"],["tenpura","tempura"],["chimichurry","chimichurri"],["chimichuri","chimichurri"],["mahonesa","mayonesa"],["mostassa","mostaza"],["mostasa","mostaza"],["vinagrette","vinagreta"],["vinagretta","vinagreta"],["reducion","reducción"],["reduccion","reducción"],["brasado","braseado"],["brazeado","braseado"],["confittado","confitado"],["confitdao","confitado"],["estofaddo","estofado"],["estofao","estofado"],["reogado","rehogado"],["rehogaddo","rehogado"],["rebuelto","revuelto"],["revueto","revuelto"],["salteao","salteado"],["saltado","salteado"],["revozado","rebozado"],["rebozaado","rebozado"],["enpanado","empanado"],["empannado","empanado"],["assado","asado"],["asadoo","asado"],["grattinado","gratinado"],["gratinao","gratinado"],["caramelisado","caramelizado"],["caramelizaddo","caramelizado"],["escavêche","escabeche"],["escaveche","escabeche"],["hamburgesa","hamburguesa"],["hamburguessa","hamburguesa"],["amburguesa","hamburguesa"],["entrecott","entrecot"],["entrrecot","entrecot"],["solomilo","solomillo"],["solomiyo","solomillo"],["carrilada","carrillada"],["carrilladda","carrillada"],["carrileras","carrilleras"],["carrillerras","carrilleras"],["chulettillas","chuletillas"],["chuletiyas","chuletillas"],["chuleton","chuletón"],["chulleton","chuletón"],["costilllas","costillas"],["cosstillas","costillas"],["costiyar","costillar"],["costillarr","costillar"],["codiyo","codillo"],["codilo","codillo"],["magroo","magro"],["tracero","trasero"],["traserro","trasero"],["pechugga","pechuga"],["pechua","pechuga"],["butiffarra","butifarra"],["butifara","butifarra"],["choriso","chorizo"],["chorízo","chorizo"],["morsilla","morcilla"],["morcillla","morcilla"],["jamon","jamón"],["jamonn","jamón"],["iberico","ibérico"],["iberíco","ibérico"],["iberica","ibérica"],["iberíca","ibérica"],["baccon","bacón"],["poyo","pollo"],["polllo","pollo"],["cordrero","cordero"],["cordéro","cordero"],["cochinilo","cochinillo"],["cochiniyo","cochinillo"],["ternnera","ternera"],["ternerra","ternera"],["serdo","cerdo"],["cerdó","cerdo"],["coneo","conejo"],["connejo","conejo"],["perdis","perdiz"],["perdíz","perdiz"],["patto","pato"],["merluzaa","merluza"],["murluza","merluza"],["pescadiya","pescadilla"],["pescadila","pescadilla"],["bakalao","bacalao"],["bacalado","bacalao"],["calamaresz","calamares"],["calamaress","calamares"],["calarmaries","calamares"],["chiporones","chipirones"],["chipirronnes","chipirones"],["chopittos","chopitos"],["chopitoz","chopitos"],["púlpo","pulpo"],["pulpó","pulpo"],["rappe","rape"],["atun","atún"],["atunn","atún"],["salmon","salmón"],["salmmon","salmón"],["salomon","salmón"],["arenqe","arenque"],["arenkue","arenque"],["rodavallo","rodaballo"],["rodabalo","rodaballo"],["lubinna","lubina"],["lubinnaa","lubina"],["dorrada","dorada"],["boqerones","boquerones"],["boqueroness","boquerones"],["anchoaz","anchoas"],["sardinaz","sardinas"],["ganbas","gambas"],["gamvas","gambas"],["gamboness","gambones"],["ganbones","gambones"],["langosttinos","langostinos"],["langostinoss","langostinos"],["mejiyones","mejillones"],["mejilones","mejillones"],["almejjas","almejas"],["almmejas","almejas"],["vieyras","vieiras"],["vieirras","vieiras"],["berberechoz","berberechos"],["berverechos","berberechos"],["caracolez","caracoles"],["caracoless","caracoles"],["marizco","marisco"],["marissco","marisco"],["langostta","langosta"],["bogabante","bogavante"],["bogavantee","bogavante"],["ensaladaa","ensalada"],["ensaladda","ensalada"],["ensaladila","ensaladilla"],["ensaladiya","ensaladilla"],["salmorrejo","salmorejo"],["gaspacho","gazpacho"],["gazpachoo","gazpacho"],["cosido","cocido"],["cociddo","cocido"],["potage","potaje"],["potajje","potaje"],["favada","fabada"],["fabadda","fabada"],["paeya","paella"],["paellla","paella"],["arrozs","arroz"],["arróz","arroz"],["garvanzos","garbanzos"],["garbanzoss","garbanzos"],["lentejaz","lentejas"],["lentejjas","lentejas"],["judias","judías"],["judiass","judías"],["aluvias","alubias"],["alubiaz","alubias"],["patattas","patatas"],["patatasz","patatas"],["patatta","patata"],["patataa","patata"],["boniatoo","boniato"],["bonniato","boniato"],["zanoria","zanahoria"],["zanahorrias","zanahoria"],["alcachofaz","alcachofas"],["alcachoffas","alcachofas"],["alcachoffa","alcachofa"],["champinones","champiñones"],["champiñonez","champiñones"],["champiñoness","champiñones"],["champinon","champiñón"],["champiñon","champiñón"],["bolettus","boletus"],["bolets","boletus"],["setaz","setas"],["setass","setas"],["esparragos","espárragos"],["esparragoss","espárragos"],["esparrago","espárrago"],["esparragoo","espárrago"],["pimienttos","pimientos"],["pimientosz","pimientos"],["pimientto","pimiento"],["berengena","berenjena"],["berenjéna","berenjena"],["calabacin","calabacín"],["calabazín","calabacín"],["calavaza","calabaza"],["calabazaa","calabaza"],["guisantez","guisantes"],["guisantees","guisantes"],["espinacaz","espinacas"],["espinnacas","espinacas"],["ceboya","cebolla"],["ceboyino","cebollino"],["cebollinno","cebollino"],["puerroo","puerro"],["pueró","puerro"],["ajoo","ajo"],["lechugga","lechuga"],["lechgua","lechuga"],["tomatte","tomate"],["tomatte","tomate"],["cherri","cherry"],["cherrys","cherry"],["aguacatte","aguacate"],["aguacatto","aguacate"],["manggo","mango"],["limon","limón"],["limonn","limón"],["naranha","naranja"],["mansana","manzana"],["manzanaa","manzana"],["pinna","piña"],["piñaa","piña"],["frambueza","frambuesa"],["fressas","fresas"],["fresaz","fresas"],["arandanoz","arandanos"],["quesoo","queso"],["mozarela","mozzarella"],["mozzarela","mozzarella"],["mozarella","mozzarella"],["mozarellla","mozzarella"],["parmesanno","parmesano"],["parmezano","parmesano"],["provolonne","provolone"],["gorgonsola","gorgonzola"],["gorgonzolla","gorgonzola"],["ricota","ricotta"],["riccota","ricotta"],["burgoz","burgos"],["cremozo","cremoso"],["cremosso","cremoso"],["cremma","crema"],["croqetas","croquetas"],["croquettas","croquetas"],["croquetonez","croquetones"],["croquetoness","croquetones"],["cannelones","canelones"],["canelonez","canelones"],["lasanna","lasaña"],["makarrones","macarrones"],["macarroness","macarrones"],["spaguetis","espaguetis"],["espaghetis","espaguetis"],["espaguetiss","espaguetis"],["tayarines","tallarines"],["tallariness","tallarines"],["pastta","pasta"],["noquis","ñoquis"],["ñoquiz","ñoquis"],["garrofalo","garofalo"],["garofaloo","garofalo"],["quinóa","quinoa"],["almentras","almendras"],["almendraz","almendras"],["nueses","nueces"],["nuecez","nueces"],["sesamo","sésamo"],["sessamo","sésamo"],["piparraz","piparras"],["callena","cayena"],["cayenna","cayena"],["pimenton","pimentón"],["cilanntro","cilantro"],["peregil","perejil"],["perejill","perejil"],["albaca","albahaca"],["albahacca","albahaca"],["oregano","orégano"],["oreggano","orégano"],["romerro","romero"],["tomiyo","tomillo"],["tomilo","tomillo"],["trigeros","trigueros"],["triguerros","trigueros"],["ajettez","ajetes"],["panaderra","panadera"],["fritaz","fritas"],["fritto","frito"],["fritoz","fritos"],["hueboz","huevos"],["huebo","huevos"],["huevoss","huevos"],["huebo","huevo"],["huevó","huevo"],["secretoo","secreto"],["secrecto","secreto"],["cachoppo","cachopo"],["cachopinez","cachopines"],["cremosidadd","cremosidad"],["picadiyo","picadillo"],["picadilo","picadillo"],["caldereeta","caldereta"],["calderetta","caldereta"],["salza","salsa"],["salsaa","salsa"],["miell","miel"],["sofrtito","sofrito"],["sofritto","sofrito"],["guarnicion","guarnición"],["guarnizión","guarnición"],["guarnicioness","guarniciones"],["balsamico","balsámico"],["balsamíco","balsámico"],["asturianno","asturiano"],["cordobes","cordobés"],["cordobéz","cordobés"],["riojanna","riojana"],["bilbaina","bilbaína"],["bilbáina","bilbaína"],["vaska","vasca"],["japoneza","japonesa"],["mexicanna","mexicana"],["cazero","casero"],["caseroo","casero"],["cazera","casera"],["caserra","casera"],["delicías","delicias"],["delisiass","delicias"],["rebolconas","revolconas"],["revolconaz","revolconas"]]);
-const GASTRO_VOCAB=["aceite","aceitunas","acelga","acelgas","agridulce","aguacate","ahumado","ajetes","ajillo","ajo","ajos","albahaca","albardado","alcachofa","alcachofas","alcaparras","alioli","almejas","almendras","alubias","anchoa","anchoas","andaluz","andaluza","anís","apio","arandanos","arenque","arroz","artesana","artesano","arándano","arándanos","asada","asado","asados","asturiana","asturiano","atún","avellanas","azafrán","bacalao","bacon","bacón","balsámico","barbacoa","bechamel","berberechos","berenjena","berenjenas","besugo","bilbaína","bizcocho","bogavante","boletus","boloñesa","boniato","bonito","boquerones","braseada","braseado","brie","brownie","brócoli","budín","buey","bulgur","burgos","burrata","burrito","butifarra","caballa","cabracho","cabrales","cabrito","cachopines","cachopo","calabacines","calabacín","calabaza","calamar","calamares","caldereta","caldo","camembert","canela","canelones","canelón","canónigos","carabinero","carabineros","caracoles","caramelizada","caramelizado","carbonara","carpaccio","carrillada","carrilleras","casera","casero","catalana","cayena","cebolla","cebollas","cebollino","cecina","centollo","cerdo","cerezas","ceviche","champiñones","champiñón","cheddar","cheesecake","cherry","chimichurri","chipirones","chistorra","chopitos","chorizo","chuleta","chuletillas","chuletón","churrasco","cigalas","cilantro","clásica","clásico","cochinillo","cocida","cocidas","cocido","cocidos","coco","codillo","codorniz","col","coliflor","comino","conejo","confitada","confitado","congrio","consomé","cordero","cordobesa","cordobés","corvina","costillar","costillas","cotta","coulant","crema","cremosidad","cremoso","cremosos","crepe","crepes","croquetas","croquetones","croquetón","crujiente","curry","cuscús","cúrcuma","delicias","demiglace","dorada","dorado","dulce","dátiles","emmental","empanada","empanadilla","empanado","emperador","endivia","eneldo","ensalada","ensaladilla","entrecot","escabeche","escalfados","escarola","espada","espaguetis","española","espinaca","espinacas","espárrago","espárragos","estofada","estofado","fabada","feta","fideos","fideuá","fingers","flambeado","flan","frambuesa","fresas","fresca","fresco","frescos","frita","fritas","frito","fritos","fritura","frutos","gallina","gallo","gambas","gambones","gambón","garbanzos","garofalo","gazpacho","glaseada","glaseado","gorgonzola","gouda","granada","gratinada","gratinado","guacamole","guarniciones","guarnición","guisada","guisado","guisantes","habas","hamburguesa","harina","helado","hervida","hervido","hierbabuena","higos","horno","huevo","huevos","ibérica","ibérico","idiazábal","jabalí","jamón","japonesa","jengibre","judías","kimchi","kéfir","lacón","lagarto","langosta","langostino","langostinos","lasaña","laurel","leche","lechuga","lenguado","lentejas","lima","limón","lombarda","lomo","lubina","macarrones","madrileña","madrileño","magro","manchega","manchego","mandarina","mango","mantequilla","manzana","marinado","marinera","marisco","marmitako","mascarpone","mayonesa","maíz","mediterránea","mejillones","melocotón","melva","melón","menta","merluza","mexicana","miel","migas","milhojas","mojo","montadito","moras","morcilla","mostaza","mousse","mozzarella","naranja","nata","natillas","natural","navajas","nectarina","nueces","nécoras","níscalos","oca","orégano","ostras","padrón","paella","pan","panadera","panceta","panna","papada","parmentier","parmesano","parrilla","pasas","pasta","patata","patatas","pato","pavo","pechuga","pecorino","pepinillo","pepinillos","pepino","pera","perdiz","perejil","pescadilla","pesto","pez","picadillo","picante","pilpil","pimentón","pimienta","pimientas","pimiento","pimientos","piparras","piquillo","pistachos","piña","piñones","plancha","pluma","plátano","pochada","pochado","pochados","pollo","potaje","potajes","presa","provolone","puerro","puerros","pulpo","quesadilla","queso","quesos","quinoa","rallado","rape","raviolis","rebozado","reducción","rehogada","rehogado","rellenas","relleno","rellenos","remolacha","repollo","requesón","revolconas","revuelto","ricotta","riojana","riojano","risotto","rodaballo","romana","romero","romesco","roquefort","rúcula","sal","salchicha","salmonete","salmorejo","salmón","salpicón","salsa","salsas","salteada","salteado","sandía","sardina","sardinas","secos","secreto","sepia","setas","sobrasada","sofrito","solomillo","sopa","sorbete","sándwich","sésamo","tacos","tagliatelle","tallarines","tarta","tartar","tellinas","tempura","teriyaki","ternera","tiradito","tiramisú","tomate","tomates","tomillo","torrijas","tortellini","tortilla","tortitas","tosta","tostas","tradicional","trasero","trigo","trigueros","trucha","trufa","tártara","uva","vaca","vainilla","valenciana","valenciano","vaporizado","vasca","velouté","venado","verde","verdes","vieiras","villaroy","vinagre","vinagreta","vizcaína","yogur","yuca","zamburiñas","zanahoria","zanahorias","ñoquis"];
-const GASTRO_VOCAB_SET=new Set(GASTRO_VOCAB.map(w=>norm(w)));
+// Variantes culinarias válidas: no son erratas.
+for(const word of ['saltado','brasado','ricota','bolets','mahonesa','allioli','sofritto'])GASTRO_TYPOS.delete(word);
 
-// V29: diccionario gastronómico local y sustituciones conservadoras. Nunca cambia el significado de forma deliberada.
+// V30 · variantes comprobadas en el historial de menús.
+for(const [from,to] of [["alboniga", "albóndiga"], ["alchachofas", "alcachofas"], ["reahogadas", "rehogadas"], ["reahogados", "rehogados"], ["reahogada", "rehogada"], ["bagabante", "bogavante"], ["calsodo", "caldoso"], ["braseddo", "braseado"], ["teenera", "ternera"], ["calmares", "calamares"], ["canelosnes", "canelones"], ["carrilera", "carrillera"], ["carrileras", "carrilleras"], ["parmetier", "parmentier"], ["permetier", "parmentier"], ["permitier", "parmentier"], ["permentier", "parmentier"], ["charrasco", "churrasco"], ["croquetaa", "croqueta"], ["coquetones", "croquetones"], ["picatoteste", "picatostes"], ["enperador", "emperador"], ["ensala", "ensalada"], ["ensalda", "ensalada"], ["ensálada", "ensalada"], ["mebrillo", "membrillo"], ["menbrillo", "membrillo"], ["tenplada", "templada"], ["motzarela", "mozzarella"], ["motazarela", "mozzarella"], ["mostazarela", "mozzarella"], ["parrila", "parrilla"], ["perrilla", "parrilla"], ["tenera", "ternera"], ["entrecott", "entrecot"], ["putanessca", "putanesca"], ["teriaki", "teriyaki"], ["tetempura", "tempura"], ["compacgo", "compango"], ["compago", "compango"], ["fidegua", "fideuá"], ["contramulo", "contramuslo"], ["merzluza", "merluza"], ["vazca", "vasca"], ["flamenquine", "flamenquines"], ["flamenquínes", "flamenquines"], ["yourk", "York"], ["gaspacho", "gazpacho"], ["beycon", "beicon"], ["guisases", "guisantes"], ["jomon", "jamón"], ["jaomon", "jamón"], ["hamburgeza", "hamburguesa"], ["hamburgueza", "hamburguesa"], ["hamburgesa", "hamburguesa"], ["cryspi", "crispy"], ["piemientos", "pimientos"], ["lasitos", "lacitos"], ["lomitis", "lomitos"], ["macarranos", "macarrones"], ["cabonara", "carbonara"], ["moztasa", "mostaza"], ["tigueres", "tigres"], ["mensestra", "menestra"], ["parella", "paella"], ["mexta", "mixta"], ["garrufalo", "Garofalo"], ["garufalo", "Garofalo"], ["torrenoz", "torreznos"], ["polllo", "pollo"], ["villaroi", "villaroy"], ["villarei", "villaroy"], ["villareoi", "villaroy"], ["prechuga", "pechuga"], ["pomodo", "pomodoro"], ["ipomodoro", "pomodoro"], ["regout", "ragout"], ["roliito", "rollito"], ["birutas", "virutas"], ["salomorejo", "salmorejo"], ["cordobez", "cordobés"], ["santeado", "salteado"], ["braseadon", "braseado"], ["probelone", "provolone"], ["secretto", "secreto"], ["treguero", "triguero"], ["suctidos", "surtido"], ["piento", "pimiento"], ["tordeline", "tortellini"], ["tordelline", "tortellini"], ["papata", "patata"], ["revolcana", "revolcona"], ["wock", "wok"], ["calabazin", "calabacín"], ["guarnicion", "guarnición"], ["atun", "atún"], ["salmon", "salmón"], ["salpicon", "salpicón"], ["chuleton", "chuletón"], ["higado", "hígado"], ["ibericas", "ibéricas"], ["medallon", "medallón"], ["limon", "limón"], ["camaron", "camarón"], ["modena", "Módena"], ["cordobes", "cordobés"], ["montañes", "montañés"], ["cn", "con"], ["cln", "con"], ["capresse", "caprese"], ["yorgurt", "yogur"], ["cachopin", "cachopín"], ["croqueton", "croquetón"], ["palentier", "parmentier"], ["pestto", "pesto"], ["habuela", "abuela"], ["rayadura", "ralladura"]])GASTRO_TYPOS.set(from,to);
+GASTRO_TYPOS.set('cacera','casera');GASTRO_TYPOS.set('caceras','caseras');
+const GASTRO_VOCAB=["aceite","aceitunas","acelga","acelgas","agridulce","aguacate","ahumado","ajetes","ajillo","ajo","ajos","albahaca","albardado","alcachofa","alcachofas","alcaparras","alioli","almejas","almendras","alubias","anchoa","anchoas","andaluz","andaluza","anís","apio","arandanos","arenque","arroz","artesana","artesano","arándano","arándanos","asada","asado","asados","asturiana","asturiano","atún","avellanas","azafrán","bacalao","bacon","bacón","balsámico","barbacoa","bechamel","berberechos","berenjena","berenjenas","besugo","bilbaína","bizcocho","bogavante","boletus","boloñesa","boniato","bonito","boquerones","braseada","braseado","brie","brownie","brócoli","budín","buey","bulgur","burgos","burrata","burrito","butifarra","caballa","cabracho","cabrales","cabrito","cachopines","cachopo","calabacines","calabacín","calabaza","calamar","calamares","caldereta","caldo","camembert","canela","canelones","canelón","canónigos","carabinero","carabineros","caracoles","caramelizada","caramelizado","carbonara","carpaccio","carrillada","carrilleras","casera","casero","catalana","cayena","cebolla","cebollas","cebollino","cecina","centollo","cerdo","cerezas","ceviche","champiñones","champiñón","cheddar","cheesecake","cherry","chimichurri","chipirones","chistorra","chopitos","chorizo","chuleta","chuletillas","chuletón","churrasco","cigalas","cilantro","clásica","clásico","cochinillo","cocida","cocidas","cocido","cocidos","coco","codillo","codorniz","col","coliflor","comino","conejo","confitada","confitado","congrio","consomé","cordero","cordobesa","cordobés","corvina","costillar","costillas","cotta","coulant","crema","cremosidad","cremoso","cremosos","crepe","crepes","croquetas","croquetones","croquetón","crujiente","curry","cuscús","cúrcuma","delicias","demiglace","dorada","dorado","dulce","dátiles","emmental","empanada","empanadilla","empanado","emperador","endivia","eneldo","ensalada","ensaladilla","entrecot","escabeche","escalfados","escarola","espada","espaguetis","española","espinaca","espinacas","espárrago","espárragos","estofada","estofado","fabada","feta","fideos","fideuá","fingers","flambeado","flan","frambuesa","fresas","fresca","fresco","frescos","frita","fritas","frito","fritos","fritura","frutos","gallina","gallo","gambas","gambones","gambón","garbanzos","garofalo","gazpacho","glaseada","glaseado","gorgonzola","gouda","granada","gratinada","gratinado","guacamole","guarniciones","guarnición","guisada","guisado","guisantes","habas","hamburguesa","harina","helado","hervida","hervido","hierbabuena","higos","horno","huevo","huevos","ibérica","ibérico","idiazábal","jabalí","jamón","japonesa","jengibre","judías","kimchi","kéfir","lacón","lagarto","langosta","langostino","langostinos","lasaña","laurel","leche","lechuga","lenguado","lentejas","lima","limón","lombarda","lomo","lubina","macarrones","madrileña","madrileño","magro","manchega","manchego","mandarina","mango","mantequilla","manzana","marinado","marinera","marisco","marmitako","mascarpone","mayonesa","maíz","mediterránea","mejillones","melocotón","melva","melón","menta","merluza","mexicana","miel","migas","milhojas","mojo","montadito","moras","morcilla","mostaza","mousse","mozzarella","naranja","nata","natillas","natural","navajas","nectarina","nueces","nécoras","níscalos","oca","orégano","ostras","padrón","paella","pan","panadera","panceta","panna","papada","parmentier","parmesano","parrilla","pasas","pasta","patata","patatas","pato","pavo","pechuga","pecorino","pepinillo","pepinillos","pepino","pera","perdiz","perejil","pescadilla","pesto","pez","picadillo","picante","pilpil","pimentón","pimienta","pimientas","pimiento","pimientos","piparras","piquillo","pistachos","piña","piñones","plancha","pluma","plátano","pochada","pochado","pochados","pollo","potaje","potajes","presa","provolone","puerro","puerros","pulpo","quesadilla","queso","quesos","quinoa","rallado","rape","raviolis","rebozado","reducción","rehogada","rehogado","rellenas","relleno","rellenos","remolacha","repollo","requesón","revolconas","revuelto","ricotta","riojana","riojano","risotto","rodaballo","romana","romero","romesco","roquefort","rúcula","sal","salchicha","salmonete","salmorejo","salmón","salpicón","salsa","salsas","salteada","salteado","sandía","sardina","sardinas","secos","secreto","sepia","setas","sobrasada","sofrito","solomillo","sopa","sorbete","sándwich","sésamo","tacos","tagliatelle","tallarines","tarta","tartar","tellinas","tempura","teriyaki","ternera","tiradito","tiramisú","tomate","tomates","tomillo","torrijas","tortellini","tortilla","tortitas","tosta","tostas","tradicional","trasero","trigo","trigueros","trucha","trufa","tártara","uva","vaca","vainilla","valenciana","valenciano","vaporizado","vasca","velouté","venado","verde","verdes","vieiras","villaroy","vinagre","vinagreta","vizcaína","yogur","yuca","zamburiñas","zanahoria","zanahorias","ñoquis"];
+const GASTRO_VOCAB_SET=new Set([...GASTRO_VOCAB,...["espalda", "espada", "parrillada", "carrillada", "morcillo", "morcilla", "ravioli", "raviolis", "ravioles", "guisante", "guisantes", "tortita", "tortitas", "rebozada", "rebozado", "cremosa", "cremoso", "cremosas", "cremosos", "carrillera", "carrilleras", "croqueta", "croquetas", "revolcona", "revolconas", "artesanal", "artesana", "rallada", "rallado", "ahumada", "ahumado", "garbanzo", "garbanzos", "espagueti", "espaguetis", "delicia", "delicias", "triguero", "trigueros", "tagliatella", "tagliatelle", "marmitaco", "marmitako", "parmesana", "parmesano", "braseada", "braseado", "saltado", "brasado", "ricota", "bolets", "mahonesa", "allioli", "sofritto"],...GASTRO_TYPOS.values()].map(w=>norm(w)));
+
+// V30: diccionario gastronómico local y sustituciones conservadoras. Nunca cambia el significado de forma deliberada.
 function keepCase(source, replacement){
  if(source===source.toLocaleUpperCase('es-ES')&&source!==source.toLocaleLowerCase('es-ES'))return replacement.toLocaleUpperCase('es-ES');
  if(source[0]===source[0].toLocaleUpperCase('es-ES'))return replacement[0].toLocaleUpperCase('es-ES')+replacement.slice(1);
@@ -132,6 +147,57 @@ function fixGastroTypos(s){
  });
 }
 const GASTRO_CONTEXT=[
+ [/\b(ensalada|salsa)\s+cesar\b/giu,'$1 César'],
+ [/\b(de\s+)burgos\b/giu,'$1Burgos'],
+ [/\brebosad([oa]s?)\b/giu,'rebozad$1'],
+ [/\bcanalones(?=\s+rellenos?\s+de\s+carne\b)/giu,'canelones'],
+ [/\b(croquetas\b[^,;]*?\s+)casera\b/giu,'$1caseras'],
+ [/\bcarrillera\s+estafada\b/giu,'carrillera estofada'],
+ [/\blentejas\s+estocadas\b/giu,'lentejas estofadas'],
+ [/\brabo de toro estufado\b/giu,'rabo de toro estofado'],
+ [/\bfabada([^\n]*?)\bcompacto\b/giu,'fabada$1compango'],
+ [/\bsalmón\s+ahumando\b/giu,'salmón ahumado'],
+ [/\bfriturita\s+de\s+pecado\b/giu,'friturita de pescado'],
+ [/\ba\s+(?:la\s+)?pancha\b/giu,'a la plancha'],
+ [/\bpluma de cerdo a la lancha\b/giu,'pluma de cerdo a la plancha'],
+ [/\bsalsa\s+verdes\b/giu,'salsa verde'],
+ [/\bsalsas\s+rosa\b/giu,'salsa rosa'],
+ [/\bsalsa\s+pimienta\b/giu,'salsa de pimienta'],
+ [/\bcuatro\s+queso\b/giu,'cuatro quesos'],
+ [/\bpatas\s+fritas\b/giu,'patatas fritas'],
+ [/\bpatatas\s+fritos\b/giu,'patatas fritas'],
+ [/\bhuevos\s+duro\b/giu,'huevos duros'],
+ [/\bhuevo\s+fritos\b/giu,'huevos fritos'],
+ [/\bhuevo\s+rotos\b/giu,'huevos rotos'],
+ [/\bhuevos\s+relleno\b/giu,'huevos rellenos'],
+ [/\bjudías\s+verde\b/giu,'judías verdes'],
+ [/\blentejas\s+estofada\b/giu,'lentejas estofadas'],
+ [/\blasaña\s+rellenas\b/giu,'lasaña rellena'],
+ [/\bespárragos\s+blanco\b/giu,'espárragos blancos'],
+ [/\bmostaza\s+miel\b/giu,'mostaza y miel'],
+ [/\bsalsa\s+miel\s+mostaza\b/giu,'salsa de miel y mostaza'],
+ [/^revuelto\s+pavo\b/giu,'revuelto de pavo'],
+ [/^dados\s+pollo\b/giu,'dados de pollo'],
+ [/^jamoncito\s+pollo\b/giu,'jamoncito de pollo'],
+ [/^hamburguesa\s+pollo\b/giu,'hamburguesa de pollo'],
+ [/\btrasero\s+de\s+polo\b/giu,'trasero de pollo'],
+ [/\btrasero\s+e\s+pollo\b/giu,'trasero de pollo'],
+ [/\bvino\s+tiento\b/giu,'vino tinto'],
+ [/\balas\s+finas\s+hiervas\b/giu,'a las finas hierbas'],
+ [/\balas\s+finas\s+hierbas\b/giu,'a las finas hierbas'],
+ [/\bal[ií]\s*-?\s*oli\b/giu,'alioli'],
+ [/\bala\s+(?=jardinera\b|mostaza\b|madrileña\b|provenzal\b|gallega\b|barbacoa\b|boloñesa\b|portuguesa\b|napolitana\b|cerveza\b|pimienta\b)/giu,'a la '],
+ [/\bala\s+ajillo\b/giu,'al ajillo'],
+ [/\bgazpacho\s+andaluza\b/giu,'gazpacho andaluz'],
+ [/\bespaguetis\s+a\s+la\s+carbonada\b/giu,'espaguetis a la carbonara'],
+ [/\bmerluza\s+a\s+la\s+vascas\b/giu,'merluza a la vasca'],
+ [/\bde\s+de\b/giu,'de'],
+ [/\ba\s+a\s+la\b/giu,'a la'],
+ [/\bgambas\s+gambas\b/giu,'gambas'],
+ [/\bplancha\s+plancha\b/giu,'plancha'],
+ [/\bmanzana\s+rayada\b/giu,'manzana rallada'],
+ [/\bc\/\s*/giu,'con '],
+
  // Composición y gramática culinaria con sentido inequívoco.
  [/(\b(?:arroz|espaguetis|macarrones|entrecot|solomillo|pescadilla|merluza|bacalao|pollo|calamares|chipirones)\s+)ala\s+(?=cubana\b|plancha\b|romana\b|rumana\b|marinera\b|vasca\b|riojana\b|bilbaína\b|andaluza\b|parrilla\b|carbonara\b)/giu,'$1a la '],
  [/\ba\s+los\s+romanos\b/giu,'a la romana'],
@@ -173,11 +239,18 @@ function editDistanceAtMostOne(a,b){
  }
  return diffs+(i<a.length||j<b.length?1:0)<=1;
 }
+function isKnownGastroWord(word){
+ const n=norm(word);
+ // No proponer singular para plurales válidos («burritos», «entrecots»).
+ return GASTRO_VOCAB_SET.has(n)||GASTRO_VOCAB_SET.has(n.replace(/s$/,''))||
+   GASTRO_VOCAB_SET.has(n.replace(/es$/,''))||GASTRO_VOCAB_SET.has(n+'s')||GASTRO_VOCAB_SET.has(n+'es')||
+   ['saltado','brasado','ricota','bolets','mahonesa','allioli','sofritto'].includes(n);
+}
 function suggestGastroWords(text){
  const suggestions=[];const seen=new Set();
  for(const match of text.matchAll(/[\p{L}]+/gu)){
   const word=match[0],n=norm(word);
-  if(n.length<7 || GASTRO_VOCAB_SET.has(n) || seen.has(n) || GASTRO_TYPOS.has(word.toLocaleLowerCase('es-ES')))continue;
+  if(n.length<7 || isKnownGastroWord(n) || seen.has(n) || GASTRO_TYPOS.has(word.toLocaleLowerCase('es-ES')))continue;
   seen.add(n);
   const candidates=GASTRO_VOCAB.filter(candidate=>Math.abs(norm(candidate).length-n.length)<=1&&editDistanceAtMostOne(n,norm(candidate)));
   const different=[...new Set(candidates.map(x=>norm(x)))];
@@ -191,22 +264,44 @@ function replaceOneCulinaryWord(text,from,to){
  return text.replace(/[\p{L}]+/gu,word=>word===from?to:word);
 }
 
-// Solo eliminamos viñetas y números de lista: nunca cantidades como 1/2, 1/4 o 2 huevos.
+// Cantidades y fracciones se conservan. La numeración pegada se elimina solo ante letras.
+function cleanMenuLine(s){
+ s=stripOrReplaceEmoji(s).replace(/[\u200B-\u200F\u2060\uFEFF]/g,' ').replace(/\u2044/g,'/')
+  .replace(/\s*<Se editó este mensaje\.>\s*/giu,' ').trim();
+ for(let i=0;i<3;i++)s=s.replace(/^\s*[-–—⁃*•▪◦‣·]+\s*/u,'').replace(/^\s*\d{1,2}\s*(?:\)\s*|\.(?:\s+|(?=\p{L}))|[-–—]\s+)/u,'');
+ return s.trim().replace(/\s+/g,' ').replace(/\s*\.\s*$/u,'');
+}
+function gastroWarnings(text){
+ const warnings=[];
+ for(const [re,message] of [
+  [new RegExp("\\b(?:de )?terna\\b",'iu'),"¿Ternera? Confirmar ingrediente."],
+  [new RegExp("\\bsalomón\\b",'iu'),"Posible salmón con tilde: no cubierto por la regla «salomon»."],
+  [new RegExp("^(?:ahumado|fresco y atún|de corral a la plancha|iento asado y atún|y huevo frito|ensalada de pim|pechuga de pollo vill|vill)$",'iu'),"Fragmento separado o incompleto."],
+  [new RegExp("\\bhamburguesa.*\\bclásico\\b",'iu'),"Concordancia: «clásica» si califica a la hamburguesa."],
+  [new RegExp("\\b(?:alcachofas (?:rehogada|salteados)|champiñones (?:rehogado|salteada)|guisantes salteado|habitas baby salteada|judías verdes (?:salteada|salteado|salteados)|espaguetis (?:cremoso|gratinado|salteado)|tallarines (?:cremoso|salteado))\\b",'iu'),"Revisar concordancia sin cambiar singular/plural válido."],
+  [new RegExp("\\b(?:lechona asado|lasaña rellene|limitó de cerdo|cachopo al chet|arriba tres delicias|guisantes rehogados cinco|champiñones regalos|ensalada mista|fabe|fave|febes|pango|palent|papipillote)\\b",'iu'),"Errata o dictado dudoso: requiere revisión del plato completo."],
+  [/\bvirutas de jabón\b/iu,'¿Virutas de jamón? Confirma el ingrediente.'],
+  [/\bhamburguesa.*\bbalón\b/iu,'¿Bacon? Confirma el ingrediente de la hamburguesa.'],
+  [/\blascad[ao]s?\b/iu,'Confirma si es lascado, lacado o glaseado.'],
+  [/\blacas? de (?:jamón|queso|parmesano|pollo)\b/iu,'Confirma si se refiere a lascas o a una laca culinaria.'],
+  [/\b(?:con|de|y|su|al)\s*$/iu,'El plato parece incompleto. Revisa el texto original.'],
+  [/\b(?:entrenador de ternera|miel de cabra|finas huevas|cinco)\b/iu,'Posible error de dictado. Confirma el texto sin inventar ingredientes.'],
+  [/\b(?:sopa de cocido espaguetis|ensalada italiana salmorejo|— pechuga de pollo)\b/iu,'Puede haber dos platos unidos en la misma línea.']
+ ])if(re.test(text))warnings.push(message);
+ return warnings;
+}
 function cleanDish(s, corrections=null, skipCorrections=false){
- s=stripOrReplaceEmoji(s).replace(/[\u200B-\u200F\u2060\uFEFF]/g,' ')
-   .replace(/\u2044/g,'/')
-   .replace(/^\s*[-–—⁃*•▪◦‣·]+\s*/u,'')
-   .replace(/^\s*\d{1,2}\s*(?:\)\s*|\.\s+|[-–—]\s+)/u,'')
-   .trim().replace(/\s+/g,' ');
- const before=s;
+ s=cleanMenuLine(s);const before=s;
  if(!skipCorrections){
-  for(const [r,to] of FIXES)s=s.replace(r,to);
-  s=fixGastroTypos(s);
-  s=corregirPlatoPorContexto(s);
-  s=fixGastroContext(s);
+  for(let i=0;i<3;i++){
+   const previous=s;s=fixGastroTypos(s);
+   for(const [r,to] of FIXES)s=s.replace(r,to);
+   s=fixGastroContext(corregirPlatoPorContexto(s));
+   if(s===previous)break;
+  }
  }
  if(corrections && before!==s)corrections.push({before:cap(before),after:cap(s)});
- return /^\d+(?:\/\d+|\.\d+)?\s/.test(s)?s:cap(s)
+ return /^\d+(?:\/\d+|\.\d+)?\s/.test(s)?s:cap(s);
 }
 // La fecha del WhatsApp solo sirve para avisar: NO determina el día del menú.
 function parseDateLine(line){
@@ -222,19 +317,22 @@ function parseDateLine(line){
  return year>=2000&&year<=2100&&d.getFullYear()===year&&d.getMonth()===month-1&&d.getDate()===day?d:null
 }
 function parseMenu(text){
- const o={p:[],s:[],extra:'',date:null,corrections:[],pMeta:[],sMeta:[],extraMeta:null};let sec=null;const loose=[];const looseMeta=[];
+ const o={p:[],s:[],extra:'',date:null,corrections:[],pMeta:[],sMeta:[],extraMeta:null,warnings:[]};let sec=null;const loose=[];const looseMeta=[];
  for(const raw of text.split(/\r?\n/)){
-  const line=raw.trim();if(!line||forbiddenSupplement(line))continue;
-  const n=norm(stripOrReplaceEmoji(line)).replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
-  if(/^(la tankeria|cerveceria la tankeria|la tarada|villanueva de avila|el principado)$/.test(n))continue;
-  if(/^(primeros?|primer plato|entrantes?)$/.test(n)){sec='p';continue}
-  if(/^(segundos?|segundo plato|principales?)$/.test(n)){sec='s';continue}
+  let line=raw.replace(/^\s*\[\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?\]\s*[^:]+:\s*/u,'').trim();if(!line||forbiddenSupplement(line))continue;
+  const n=norm(cleanMenuLine(line)).replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+  if(/^(la tankeria|cerveceria la tankeria|la tarada|villanueva(?: de avila)?|avila|el principado)$/.test(n))continue;
+  if(/^(primeros?|primer plato|entrantes?|primreros|prineros)$/.test(n)){sec='p';continue}
+  if(/^(segundos?|segundo plato|principales?|seguendos|segienodos)$/.test(n)){sec='s';continue}
+  if(/^(seguro|segunda)$/.test(n)&&((sec==='p'&&o.p.length>=4)||(!sec&&loose.length>=4))){if(!sec){o.p.push(...loose);o.pMeta.push(...looseMeta);loose.length=0;looseMeta.length=0}sec='s';o.warnings.push('Se interpretó «'+line+'» como encabezado de segundos. Comprueba el reparto.');continue}
+  const inline=cleanMenuLine(line).match(/^segundo\s+((?:entrecot|ragout)\b.*)$/iu);
+  if(inline&&((sec==='p'&&o.p.length>=4)||(!sec&&loose.length>=4))){if(!sec){o.p.push(...loose);o.pMeta.push(...looseMeta);loose.length=0;looseMeta.length=0}sec='s';line=inline[1]}
   const d=parseDateLine(line);
   if(d&&(n.length<100||/\bmenu\b|\bfecha\b/.test(n))){if(!o.date)o.date=d;continue}
   if(/^menu(?:\s+del?\b|\s*$)/.test(n))continue;
-  if(/supl|suplement/.test(n)){if(allowsExtra()){const changes=[];o.extra=cleanDish(line,changes);o.extraMeta={changes,suggestions:suggestGastroWords(o.extra)}}continue}
+  if(/supl|suplement/.test(n)){if(allowsExtra()){const changes=[];o.extra=cleanDish(line,changes);o.extraMeta={changes,suggestions:suggestGastroWords(o.extra),warnings:gastroWarnings(o.extra)}}continue}
   const changes=[];const dish=cleanDish(line,changes);if(!dish)continue;
-  const meta={changes,suggestions:suggestGastroWords(dish)};if(sec){o[sec].push(dish);o[sec+'Meta'].push(meta)}else{loose.push(dish);looseMeta.push(meta)}
+  const meta={changes,suggestions:suggestGastroWords(dish),warnings:gastroWarnings(dish)};if(sec){o[sec].push(dish);o[sec+'Meta'].push(meta)}else{loose.push(dish);looseMeta.push(meta)}
   o.corrections.push(...changes)
  }
  if(loose.length&&!o.p.length&&!o.s.length){const h=Math.ceil(loose.length/2);o.p=loose.slice(0,h);o.s=loose.slice(h);o.pMeta=looseMeta.slice(0,h);o.sMeta=looseMeta.slice(h)}
@@ -271,24 +369,28 @@ function showCorrectionsFromParse(parsed){
  for(const [key,items] of [['p',parsed.pMeta],['s',parsed.sMeta]])for(let i=0;i<Math.min(7,items.length);i++){
   const id=key+i,m=items[i];
   if(m.changes.length)rows.push({kind:'auto',id,before:m.changes[0].before,after:m.changes[m.changes.length-1].after});
-  for(const proposal of m.suggestions)rows.push({kind:'suggestion',id,...proposal});
+  for(const proposal of m.suggestions)rows.push({kind:'suggestion',id,expected:parsed[key][i],...proposal});
+  for(const warning of m.warnings||[])rows.push({kind:'warning',id,message:'«'+parsed[key][i]+'»: '+warning});
  }
  if(parsed.extraMeta && allowsExtra()){
   if(parsed.extraMeta.changes.length)rows.push({kind:'auto',id:'extra',before:parsed.extraMeta.changes[0].before,after:parsed.extraMeta.changes.at(-1).after});
-  for(const proposal of parsed.extraMeta.suggestions)rows.push({kind:'suggestion',id:'extra',...proposal});
+  for(const proposal of parsed.extraMeta.suggestions)rows.push({kind:'suggestion',id:'extra',expected:parsed.extra,...proposal});
+  for(const warning of parsed.extraMeta.warnings||[])rows.push({kind:'warning',id:'extra',message:'«'+parsed.extra+'»: '+warning});
  }
+ for(const warning of parsed.warnings||[])rows.push({kind:'warning',id:'menu',message:warning});
  renderCorrectionReview(rows);
 }
 function renderCorrectionReview(rows){
  const panel=$('#correctionReview');panel.replaceChildren();panel.hidden=rows.length===0;
  if(!rows.length)return;
- const heading=document.createElement('h3');heading.textContent='Revisión del corrector · '+rows.filter(x=>x.kind==='auto').length+' cambios · '+rows.filter(x=>x.kind==='suggestion').length+' sugerencias';panel.append(heading);
+ const heading=document.createElement('h3');heading.textContent='Revisión del corrector · '+rows.filter(x=>x.kind==='auto').length+' cambios · '+rows.filter(x=>x.kind==='suggestion').length+' sugerencias · '+rows.filter(x=>x.kind==='warning').length+' avisos';panel.append(heading);
  for(const row of rows){
   const item=document.createElement('div');item.className='correctionItem';
   const info=document.createElement('div');info.className='correctionText';
-  const name=document.createElement('strong');name.textContent=(row.id.startsWith('p')?'Primeros':row.id.startsWith('s')?'Segundos':'Extra')+' · ';
-  const desc=document.createElement('span');desc.textContent=row.kind==='auto'?`«${row.before}» → «${row.after}»`:`«${row.from}» → «${row.to}»`;
+  const name=document.createElement('strong');name.textContent=(row.id.startsWith('p')?'Primeros':row.id.startsWith('s')?'Segundos':row.id==='menu'?'Menú':'Extra')+' · ';
+  const desc=document.createElement('span');desc.textContent=row.kind==='warning'?row.message:row.kind==='auto'?`«${row.before}» → «${row.after}»`:`«${row.from}» → «${row.to}»`;
   info.append(name,desc);
+  if(row.kind==='warning'){item.append(info);panel.append(item);continue}
   const b=document.createElement('button');b.type='button';b.textContent=row.kind==='auto'?'Deshacer':'Aplicar';
   b.onclick=()=>{
    const el=document.getElementById(row.id);if(!el){return}
@@ -297,7 +399,7 @@ function renderCorrectionReview(rows){
     if(el.value===row.after){el.value=row.before;keepOriginalIds.add(row.id);b.textContent='Original conservado'}
     else{b.textContent='Texto ya editado'}
    }else{
-    const after=replaceOneCulinaryWord(el.value,row.from,row.to);
+    const after=el.value===row.expected?replaceOneCulinaryWord(el.value,row.from,row.to):el.value;
     if(after!==el.value){el.value=after;keepOriginalIds.add(row.id);b.textContent='Aplicada'}
     else b.textContent='Texto ya editado';
    }
@@ -421,8 +523,8 @@ function loadState(){
   return true;
  }catch(e){return false}
 }
-function updateProfileUI(){const p=profile();$('#restaurant').value=active;$('#brand').firstChild.nodeValue=p.label;$('#brandSub').textContent='Generador v29 · 4 restaurantes · A3 + 9:16';$('#profileInfo').innerHTML=p.note+' <span class="pill">perfil independiente</span>';$('#extraSettings').hidden=!allowsExtra();$('#principadoExtraNotice').hidden=allowsExtra();if(!allowsExtra())$('#extra').value=''}
-$('#restaurant').addEventListener('change',async e=>{saveState();active=e.target.value;updateProfileUI();$('#parseInfo').textContent='';$('#correctionReview').hidden=true;$('#correctionReview').replaceChildren();keepOriginalIds.clear();if(!loadState())fillSample();saveState();setExportBusy(true);try{await loadActiveTemplates()}finally{setExportBusy(false)}});$('#parseBtn').onclick=applyParse;$('#demoBtn').onclick=fillSample;$('#quick').addEventListener('input',saveState);$('#quick').addEventListener('paste',()=>setTimeout(applyParse,60));$('#fechaModo').addEventListener('change',()=>{syncDateMode();saveState();schedule()});$('#fecha').addEventListener('change',e=>{if(!e.target.value)return;$('#fechaModo').value='manual';const [y,m,d]=e.target.value.split('-').map(Number);$('#fechaTexto').value=datePretty(new Date(y,m-1,d));syncDateMode();saveState();schedule()});$('#fechaTexto').addEventListener('change',()=>{$('#fechaModo').value='manual';syncDateMode();saveState();schedule()});document.querySelectorAll('input,select').forEach(el=>{if(el.id!=='restaurant')el.addEventListener('input',()=>{if(/^(?:[ps][0-6]|extra)$/.test(el.id))keepOriginalIds.delete(el.id);saveState();schedule()})});[...Array(7)].forEach((_,i)=>{for(const id of ['#p'+i,'#s'+i]){const el=$(id);el.addEventListener('blur',e=>{e.target.value=cleanDish(e.target.value);saveState();schedule()});el.addEventListener('change',e=>{e.target.value=cleanDish(e.target.value);saveState();schedule()});el.addEventListener('paste',()=>setTimeout(()=>{el.value=cleanDish(el.value);saveState();schedule()},0))}});$('#extra').addEventListener('blur',e=>{e.target.value=cleanDish(e.target.value);saveState();schedule()});$('#extra').addEventListener('change',e=>{e.target.value=cleanDish(e.target.value);saveState();schedule()});$('#extra').addEventListener('paste',()=>setTimeout(()=>{$('#extra').value=cleanDish($('#extra').value);saveState();schedule()},0));document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');view=b.dataset.view;paint()});
+function updateProfileUI(){const p=profile();$('#restaurant').value=active;$('#brand').firstChild.nodeValue=p.label;$('#brandSub').textContent='Generador v30 · 4 restaurantes · A3 + 9:16';$('#profileInfo').innerHTML=p.note+' <span class="pill">perfil independiente</span>';$('#extraSettings').hidden=!allowsExtra();$('#principadoExtraNotice').hidden=allowsExtra();if(!allowsExtra())$('#extra').value=''}
+$('#restaurant').addEventListener('change',async e=>{saveState();active=e.target.value;updateProfileUI();$('#parseInfo').textContent='';$('#correctionReview').hidden=true;$('#correctionReview').replaceChildren();keepOriginalIds.clear();if(!loadState())fillSample();saveState();setExportBusy(true);try{await loadActiveTemplates()}finally{setExportBusy(false)}});$('#parseBtn').onclick=applyParse;$('#demoBtn').onclick=fillSample;$('#quick').addEventListener('input',saveState);$('#quick').addEventListener('paste',()=>setTimeout(applyParse,60));$('#fechaModo').addEventListener('change',()=>{syncDateMode();saveState();schedule()});$('#fecha').addEventListener('change',e=>{if(!e.target.value)return;$('#fechaModo').value='manual';const [y,m,d]=e.target.value.split('-').map(Number);$('#fechaTexto').value=datePretty(new Date(y,m-1,d));syncDateMode();saveState();schedule()});$('#fechaTexto').addEventListener('change',()=>{$('#fechaModo').value='manual';syncDateMode();saveState();schedule()});document.querySelectorAll('input,select').forEach(el=>{if(el.id!=='restaurant')el.addEventListener('input',()=>{if(/^(?:[ps][0-6]|extra)$/.test(el.id))keepOriginalIds.delete(el.id);saveState();schedule()})});[...Array(7)].forEach((_,i)=>{for(const id of ['#p'+i,'#s'+i]){const el=$(id);el.addEventListener('blur',e=>{e.target.value=cleanDish(e.target.value,null,keepOriginalIds.has(e.target.id));saveState();schedule()});el.addEventListener('change',e=>{e.target.value=cleanDish(e.target.value,null,keepOriginalIds.has(e.target.id));saveState();schedule()});el.addEventListener('paste',()=>setTimeout(()=>{el.value=cleanDish(el.value,null,keepOriginalIds.has(el.id));saveState();schedule()},0))}});$('#extra').addEventListener('blur',e=>{e.target.value=cleanDish(e.target.value,null,keepOriginalIds.has(e.target.id));saveState();schedule()});$('#extra').addEventListener('change',e=>{e.target.value=cleanDish(e.target.value,null,keepOriginalIds.has(e.target.id));saveState();schedule()});$('#extra').addEventListener('paste',()=>setTimeout(()=>{$('#extra').value=cleanDish($('#extra').value,null,keepOriginalIds.has('extra'));saveState();schedule()},0));document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');view=b.dataset.view;paint()});
 function crc32(bytes){let c=0xffffffff;for(const b of bytes){c^=b;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0)}return(c^0xffffffff)>>>0}async function pngWithDpi(canvas,dpi){
  const blob=await canvasBlob(canvas),ppm=Math.round(dpi/0.0254);
  const data=new Uint8Array(9),dv=new DataView(data.buffer);
@@ -490,7 +592,7 @@ $('#stage').addEventListener('contextrestored',schedule);
 
 async function init(){for(const name of ['localStorage','sessionStorage'])try{const last=window[name].getItem('menus-grupo-active-v22');if(Object.prototype.hasOwnProperty.call(PROFILES,last)){active=last;break}}catch(e){}updateProfileUI();if(!loadState())fillSample();syncDateMode();saveState();try{await Promise.all([document.fonts.load('500 28px Lora'),document.fonts.load('600 29px "Cormorant Garamond"'),document.fonts.load('400 26px "Libre Baskerville"'),document.fonts.load('500 26px "Source Serif 4"')])}catch(e){}await loadActiveTemplates()}setExportBusy(true);const initialization=init();initialization.then(()=>setExportBusy(false)).catch(e=>{$('#status').textContent='No se pudieron cargar las plantillas: '+e.message});
 </script><script>
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && !new URLSearchParams(location.search).has('preview')) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' }).catch(console.error);
   });

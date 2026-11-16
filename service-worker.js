@@ -1,11 +1,11 @@
-/* Generador de Menús Grupo · Service Worker v29 · Corrector gastronómico revisable · 16/11/2026
- * Publicar junto a index.html v29 y conservar manifest.webmanifest e icons/.
+/* Generador de Menús Grupo · Service Worker v30 · Corrección contextual y revisión persistente · 16/11/2026
+ * Publicar junto a index.html v30 y conservar manifest.webmanifest e icons/.
  * Navegaciones: red primero, caché como respaldo si se pierde la conexión.
  */
 'use strict';
 
 // Cambiar este nombre en cada nueva versión publicada para renovar la caché.
-const CACHE = 'menus-grupo-pwa-v29-gastro-20261116';
+const CACHE = 'menus-grupo-pwa-v30-whatsapp-20261116';
 const APP_SHELL = [
   './index.html',
   './manifest.webmanifest'
